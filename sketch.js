@@ -78,9 +78,18 @@ function draw() {
 
   const ctx = drawingContext;
 
+  // Update gradient rotation
+  gradientRotation = rotationSlider.value();
+
   // === Gradient Rendering ===
   if (colorModeSelect.value() === "Linear") {
-    const grad = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
+    let angle = radians(gradientRotation);
+    let halfW = width / 2;
+    let startX = -halfW * cos(angle);
+    let startY = -halfW * sin(angle);
+    let endX = halfW * cos(angle);
+    let endY = halfW * sin(angle);
+    const grad = ctx.createLinearGradient(startX, startY, endX, endY);
     grad.addColorStop(0, startColorPicker.value());
     grad.addColorStop(1, endColorPicker.value());
     ctx.strokeStyle = grad;

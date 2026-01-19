@@ -1,11 +1,11 @@
 // === Sclark Studio — Signal/Noise Builder v3.9 ===
-// Adds: Bidirectional Spacing Expansion (-3 to +3)
-// Core: Gravity Orbit + Mouse Interaction + Gradient + Embed Export
+// Gravity Orbit + Mouse Interaction + Independent Line Weight + Spacing Expansion (±3)
+// Clean Embed Generator (GitHub Linked) + Transparent/Color Background Toggle
 
 let baseSpacing = 6;
 let chaos = 0.8, chaosIntensity = 1.2, rippleDepth = 1.2;
 let speed = 0.004, size = 1.0, lineWeight = 1.5, blurAmount = 0.0;
-let detailLevel = 0.7, bgAlpha = 255;
+let detailLevel = 0.7;
 let lineColor = "#00C8A0", bgColor = "#202324";
 let startColor = "#00C8A0", endColor = "#FF0080", gradientRotation = 0;
 let offsetX1 = 0, offsetY1 = 10000, offsetX2 = 20000, offsetY2 = 30000, timeZ = 0;
@@ -17,9 +17,10 @@ let gravitySpeed = 0.01, gravityRadius = 100, gravityStrength = 0.4;
 let mouseGravityEnabled = true;
 let mouseGravityIntensity = 0.5;
 
-// 🎚️ Dynamic ring count & spacing expansion
+// 🎚️ Dynamic ring count + spacing
 let ringsSlider, spacingExpansionSlider;
 
+// Controls
 let chaosSlider, chaosIntensitySlider, rippleDepthSlider;
 let speedSlider, sizeSlider, weightSlider, blurSlider, detailSlider;
 let lineColorPicker, bgColorPicker, bgAlphaToggle;
@@ -45,14 +46,14 @@ function setup() {
 }
 
 function draw() {
-  const bgSelected = bgAlphaToggle.checked();
   blurAmount = blurSlider.value();
   drawingContext.canvas.style.filter = `blur(${blurAmount}px)`;
 
-  if (bgSelected) background(bgColorPicker.value());
+  if (bgAlphaToggle.checked()) background(bgColorPicker.value());
   else clear();
 
   translate(width / 2, height / 2);
+
   const scaleFactor = sizeSlider.value();
   scale(scaleFactor);
   strokeWeight(weightSlider.value() / scaleFactor);
@@ -96,15 +97,13 @@ function draw() {
 function drawSignal(gx, gy, gStrength) {
   const rings = ringsSlider.value();
   const step = map(detailSlider.value(), 0, 1, 0.12, 0.02);
-
-  // ✨ Bidirectional Spacing Expansion
-  const spacingMod = 1 + spacingExpansionSlider.value() * 0.15;
+  const expansion = spacingExpansionSlider.value();
 
   const mx = mouseX - width / 2;
   const my = mouseY - height / 2;
 
   for (let i = 0; i < rings; i++) {
-    const baseRadius = 50 + i * baseSpacing * spacingMod;
+    const baseRadius = 50 + i * (baseSpacing + expansion);
     beginShape();
 
     for (let a = 0; a < TWO_PI; a += step) {
@@ -119,6 +118,7 @@ function drawSignal(gx, gy, gStrength) {
       let x = radius * cos(a);
       let y = radius * sin(a);
 
+      // Gravity Orbit Distortion
       const dx = gx - x;
       const dy = gy - y;
       const d = sqrt(dx * dx + dy * dy);
@@ -126,6 +126,7 @@ function drawSignal(gx, gy, gStrength) {
       x += dx * pull * 50;
       y += dy * pull * 50;
 
+      // Mouse Gravity Interaction
       if (mouseGravityToggle.checked()) {
         const mdx = mx - x;
         const mdy = my - y;
@@ -171,21 +172,22 @@ function createControlPanel(panel) {
     el.input(() => val.html(el.value()));
   }
 
-  // === Signal Controls ===
-  addControl("Chaos", (chaosSlider = createSlider(0, 3, chaos, 0.01)));
-  addControl("Chaos Intensity", (chaosIntensitySlider = createSlider(0.5, 4.0, chaosIntensity, 0.1)));
+  // === Core signal controls ===
+  createSpan("⚙️ Core Signal Controls").parent(panel).style("font-size", "11px");
+  addControl("Chaos", (chaosSlider = createSlider(0, 3, chaos, 0.1)));
+  addControl("Chaos Intensity", (chaosIntensitySlider = createSlider(0.5, 5.0, 1.2, 0.1)));
   addControl("Ripple Depth", (rippleDepthSlider = createSlider(0.5, 2.0, rippleDepth, 0.01)));
-  addControl("Spacing Expansion", (spacingExpansionSlider = createSlider(-3, 3, 0, 0.1)));
   addControl("Speed", (speedSlider = createSlider(0.001, 0.02, speed, 0.001)));
   addControl("Size", (sizeSlider = createSlider(0.5, 2.0, size, 0.01)));
   addControl("Line Weight", (weightSlider = createSlider(1, 5, lineWeight, 0.1)));
   addControl("Blur", (blurSlider = createSlider(0, 10, blurAmount, 0.1)));
   addControl("Detail", (detailSlider = createSlider(0, 1, detailLevel, 0.01)));
+  addControl("Spacing Expansion", (spacingExpansionSlider = createSlider(-3, 3, 0, 0.1)));
   addControl("Number of Rings", (ringsSlider = createSlider(10, 150, 60, 1)));
 
   addDivider();
 
-  // === Gravity Controls ===
+  // 🌌 Gravity Orbit
   createSpan("🧲 Gravity Orbit Distortion").parent(panel).style("font-size", "11px");
   addControl("Gravity Speed", (gravitySpeedSlider = createSlider(0, 0.05, gravitySpeed, 0.001)));
   addControl("Gravity Radius", (gravityRadiusSlider = createSlider(0, 200, gravityRadius, 1)));
@@ -193,27 +195,28 @@ function createControlPanel(panel) {
 
   addDivider();
 
-  // === Mouse Controls ===
+  // 🖱️ Mouse Gravity
   createSpan("🖱️ Mouse Interaction").parent(panel).style("font-size", "11px");
   mouseGravityToggle = createCheckbox("Enable Mouse Gravity", mouseGravityEnabled);
   mouseGravityToggle.parent(panel);
+  mouseGravityToggle.style("margin", "4px 0");
   addControl("Mouse Intensity", (mouseGravitySlider = createSlider(0, 1, mouseGravityIntensity, 0.01)));
 
   addDivider();
 
-  // === Color Controls ===
+  // 🎨 Colors
   createSpan("🎨 Colors").parent(panel).style("font-size", "11px");
   lineColorPicker = createColorPicker(lineColor);
   bgColorPicker = createColorPicker(bgColor);
   [lineColorPicker, bgColorPicker].forEach(p => styleColorPicker(p));
   addControl("Line Color", lineColorPicker);
-  addControl("Background Color", bgColorPicker);
+  addControl("Background", bgColorPicker);
   bgAlphaToggle = createCheckbox("Enable Background", true);
   bgAlphaToggle.parent(panel);
 
   addDivider();
 
-  // === Gradient Controls ===
+  // 🌈 Gradient
   createSpan("🌈 Gradient Options").parent(panel).style("font-size", "11px");
   colorModeSelect = createSelect();
   colorModeSelect.option("Solid");
@@ -232,13 +235,8 @@ function createControlPanel(panel) {
 
   addDivider();
 
-  // === Embed Export ===
+  // 📤 Export
   createSpan("📄 Export").parent(panel).style("font-size", "11px");
-  const instructions = createP("Copy and paste this code into your page’s custom code area, just before </body>.")
-    .parent(panel);
-  instructions.style("font-size", "10px");
-  instructions.style("color", "#aaa");
-  instructions.style("margin", "4px 0");
 
   const generateBtn = createButton("Generate Embed Code");
   generateBtn.parent(panel);
@@ -251,7 +249,7 @@ function createControlPanel(panel) {
   embedOutput.style("height", "180px");
   embedOutput.style("resize", "vertical");
   embedOutput.style("background", "rgba(255,255,255,0.05)");
-  embedOutput.style("color", "#00ffbb");
+  embedOutput.style("color", "#0f0");
   embedOutput.style("border", "1px solid rgba(255,255,255,0.1)");
   embedOutput.style("border-radius", "6px");
   embedOutput.style("font-family", "monospace");
@@ -265,6 +263,12 @@ function createControlPanel(panel) {
     navigator.clipboard.writeText(embedOutput.value());
     alert("✅ Embed code copied to clipboard!");
   });
+
+  const note = createP("💡 Paste this script before the closing </body> tag on your site.")
+    .parent(panel);
+  note.style("font-size", "10px");
+  note.style("color", "#aaa");
+  note.style("margin", "4px 0 12px 0");
 }
 
 function styleColorPicker(p) {
@@ -278,6 +282,7 @@ function styleColorPicker(p) {
   p.style("padding", "0");
 }
 
+// 🧩 Embed Code Generator (GitHub Linked)
 function generateEmbedCode() {
   const config = {
     el: "#YOUR-ELEMENT-ID",
@@ -301,11 +306,8 @@ function generateEmbedCode() {
   };
 
   const code = `
-<!-- Paste this into your Webflow or WordPress Custom Code Block -->
-<div id="YOUR-ELEMENT-ID" style="position:relative;width:100%;height:100%;overflow:hidden;"></div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-<script src="embed/radialSignalEmbed.js"></script>
+<script src="https://sclark05.github.io/signal_noise/embed/radialSignalEmbed.js"></script>
 <script>
 initRadialSignal(${JSON.stringify(config, null, 2)});
 </script>
@@ -313,5 +315,4 @@ initRadialSignal(${JSON.stringify(config, null, 2)});
 
   embedOutput.value(code.trim());
   navigator.clipboard.writeText(code.trim());
-  alert("✅ Embed code copied! Replace #YOUR-ELEMENT-ID with your container’s ID.");
 }

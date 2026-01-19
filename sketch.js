@@ -1,16 +1,16 @@
-// === Sclark Studio — Signal/Noise Builder v3.9.6 ===
-// Stable Build: Transparency, Embed Code, Safe Initialization, and Carbon Glass UI
+// === Sclark Studio — Signal/Noise Builder v3.9.8 ===
+// Full Stable Build: All Controls (Including Detail) + Transparency + Embed + Safe Startup
 
 let chaos = 0.8, chaosIntensity = 1.2, rippleDepth = 1.2;
 let speed = 0.004, size = 1.0, lineWeight = 1.5, blurAmount = 0.0;
-let spacingExpansion = 0, detailLevel = 0.7;
+let spacingExpansion = 0, detailLevel = 0.7, falloffIntensity = 0.5;
 let lineColor = "#00C8A0", bgColor = "#202324";
 let startColor = "#00C8A0", endColor = "#FF0080", gradientRotation = 0;
 let backgroundEnabled = true;
 
 // Control elements
-let chaosSlider, chaosIntensitySlider, rippleDepthSlider;
-let speedSlider, sizeSlider, weightSlider, blurSlider, spacingSlider;
+let chaosSlider, chaosIntensitySlider, rippleDepthSlider, falloffSlider;
+let speedSlider, sizeSlider, weightSlider, blurSlider, spacingSlider, detailSlider;
 let lineColorPicker, bgColorPicker, bgToggle;
 let startColorPicker, endColorPicker, rotationSlider, colorModeSelect;
 let embedOutput, generateBtn, copyBtn;
@@ -30,23 +30,25 @@ function setup() {
   createControlPanel();
 }
 
-// ✅ Guard to prevent draw() errors before controls exist
+// ✅ Prevents errors before UI is ready
 function controlsReady() {
   return (
     chaosSlider &&
     chaosIntensitySlider &&
     rippleDepthSlider &&
+    falloffSlider &&
+    spacingSlider &&
+    detailSlider &&
     speedSlider &&
     sizeSlider &&
     weightSlider &&
     blurSlider &&
-    spacingSlider &&
     gravitySpeedSlider &&
     gravityRadiusSlider &&
     gravityStrengthSlider &&
+    ringsSlider &&
     mouseGravityToggle &&
     mouseGravitySlider &&
-    ringsSlider &&
     colorModeSelect &&
     startColorPicker &&
     endColorPicker &&
@@ -57,16 +59,14 @@ function controlsReady() {
 }
 
 function draw() {
-  // Wait until controls are ready before drawing
   if (!controlsReady()) return;
 
-  drawingContext.globalCompositeOperation = "source-over";
   drawingContext.canvas.style.filter = `blur(${blurSlider.value()}px)`;
 
   if (bgToggle.checked()) {
     background(color(bgColorPicker.value()));
   } else {
-    clear(); // true transparency
+    clear();
   }
 
   translate(width / 2, height / 2);
@@ -78,7 +78,7 @@ function draw() {
 
   const ctx = drawingContext;
 
-  // 🎨 Gradient setup
+  // === Gradient Rendering ===
   if (colorModeSelect.value() === "Linear") {
     const grad = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
     grad.addColorStop(0, startColorPicker.value());
@@ -102,19 +102,24 @@ function draw() {
   const chaosVal = chaosSlider.value();
   const intensity = chaosIntensitySlider.value();
   const ripple = rippleDepthSlider.value();
+  const falloff = falloffSlider.value();
 
   for (let i = 0; i < ringsSlider.value(); i++) {
     const baseRadius = 50 + i * (6 + spacingSlider.value());
+    const falloffFactor = lerp(1, 0.2, (i / ringsSlider.value()) * falloff);
     beginShape();
 
-    for (let a = 0; a < TWO_PI; a += 0.04) {
+    const step = map(detailSlider.value(), 0, 1, 0.12, 0.02);
+
+    for (let a = 0; a < TWO_PI; a += step) {
       const freq1 = (0.12 * i + 0.2) * ripple;
       const n1 = noise(cos(a) * freq1, sin(a) * freq1, frameCount * speedSlider.value());
       const freq2 = (0.1 * i + 0.15) * ripple * 0.8;
       const n2 = noise(cos(a + HALF_PI) * freq2, sin(a + HALF_PI) * freq2, frameCount * speedSlider.value() * 0.9);
       const combined = n1 * 0.6 + n2 * 0.4;
-      const rippleVal = 20 * chaosVal * intensity * combined;
+      const rippleVal = 20 * chaosVal * intensity * combined * falloffFactor;
       let radius = rippleVal + baseRadius;
+
       let x = radius * cos(a);
       let y = radius * sin(a);
 
@@ -144,6 +149,7 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
+// === CONTROL PANEL ===
 function createControlPanel() {
   const panel = select("#controls");
 
@@ -183,33 +189,39 @@ function createControlPanel() {
     el.input(() => val.html(el.value()));
   }
 
+  // === Core Signal Controls ===
   addLabel("🎛 Core Signal Controls");
   addControl("Chaos", (chaosSlider = createSlider(0, 3, chaos, 0.01)));
-  addControl("Chaos Intensity", (chaosIntensitySlider = createSlider(0.5, 3, chaosIntensity, 0.01)));
+  addControl("Chaos Intensity", (chaosIntensitySlider = createSlider(0.5, 3, chaosIntensity, 0.1)));
+  addControl("Falloff Intensity", (falloffSlider = createSlider(0, 1, falloffIntensity, 0.01)));
   addControl("Ripple Depth", (rippleDepthSlider = createSlider(0.5, 2, rippleDepth, 0.01)));
   addControl("Speed", (speedSlider = createSlider(0.001, 0.02, speed, 0.001)));
   addControl("Size", (sizeSlider = createSlider(0.5, 2, size, 0.01)));
-  addControl("Line Weight", (weightSlider = createSlider(0.1, 5, lineWeight, 0.1)));
+  addControl("Line Weight", (weightSlider = createSlider(0.5, 5, lineWeight, 0.1)));
+  addControl("Detail", (detailSlider = createSlider(0, 1, detailLevel, 0.01)));
   addControl("Spacing Expansion", (spacingSlider = createSlider(-3, 3, spacingExpansion, 0.1)));
   addControl("Blur", (blurSlider = createSlider(0, 10, blurAmount, 0.1)));
   addControl("Rings", (ringsSlider = createSlider(10, 150, 60, 1)));
 
   addDivider();
 
-  addLabel("🧲 Gravity Distortion");
-  addControl("Speed", (gravitySpeedSlider = createSlider(0, 0.05, gravitySpeed, 0.001)));
-  addControl("Radius", (gravityRadiusSlider = createSlider(0, 200, gravityRadius, 1)));
-  addControl("Strength", (gravityStrengthSlider = createSlider(0, 2, gravityStrength, 0.01)));
+  // === Gravity Controls ===
+  addLabel("🧲 Gravity Orbit Distortion");
+  addControl("Gravity Speed", (gravitySpeedSlider = createSlider(0, 0.05, gravitySpeed, 0.001)));
+  addControl("Gravity Radius", (gravityRadiusSlider = createSlider(0, 200, gravityRadius, 1)));
+  addControl("Gravity Strength", (gravityStrengthSlider = createSlider(0, 2, gravityStrength, 0.01)));
 
   addDivider();
 
+  // === Mouse Interaction ===
   addLabel("🖱 Mouse Interaction");
   mouseGravityToggle = createCheckbox("Enable Mouse Gravity", true);
   mouseGravityToggle.parent(panel);
-  addControl("Intensity", (mouseGravitySlider = createSlider(0, 1, 0.5, 0.01)));
+  addControl("Mouse Intensity", (mouseGravitySlider = createSlider(0, 1, 0.5, 0.01)));
 
   addDivider();
 
+  // === Colors & Gradient ===
   addLabel("🎨 Colors");
   lineColorPicker = createColorPicker(lineColor);
   bgColorPicker = createColorPicker(bgColor);
@@ -220,7 +232,7 @@ function createControlPanel() {
 
   addDivider();
 
-  addLabel("🌈 Gradient");
+  addLabel("🌈 Gradient Options");
   colorModeSelect = createSelect();
   colorModeSelect.option("Solid");
   colorModeSelect.option("Linear");
@@ -229,13 +241,14 @@ function createControlPanel() {
   addControl("Mode", colorModeSelect);
   startColorPicker = createColorPicker(startColor);
   endColorPicker = createColorPicker(endColor);
-  addControl("Start", startColorPicker);
-  addControl("End", endColorPicker);
+  addControl("Start Color", startColorPicker);
+  addControl("End Color", endColorPicker);
   addControl("Rotation", (rotationSlider = createSlider(0, 360, gradientRotation, 1)));
 
   addDivider();
 
-  addLabel("📤 Embed Code");
+  // === Embed Code ===
+  addLabel("📤 Embed Code Generator");
   generateBtn = createButton("Generate Embed Code");
   generateBtn.parent(panel);
   generateBtn.mousePressed(generateEmbedCode);
@@ -243,7 +256,7 @@ function createControlPanel() {
   embedOutput = createElement("textarea");
   embedOutput.attribute("readonly", true);
   embedOutput.style("width", "100%");
-  embedOutput.style("height", "140px");
+  embedOutput.style("height", "160px");
   embedOutput.style("background", "rgba(255,255,255,0.05)");
   embedOutput.style("color", "#0f0");
   embedOutput.style("border", "1px solid rgba(255,255,255,0.1)");
@@ -265,6 +278,7 @@ function generateEmbedCode() {
     chaos: chaosSlider.value(),
     chaosIntensity: chaosIntensitySlider.value(),
     rippleDepth: rippleDepthSlider.value(),
+    falloffIntensity: falloffSlider.value(),
     spacingExpansion: spacingSlider.value(),
     speed: speedSlider.value(),
     gravitySpeed: gravitySpeedSlider.value(),
@@ -278,6 +292,7 @@ function generateEmbedCode() {
     gradientType: colorModeSelect.value(),
     blur: blurSlider.value(),
     lineWeight: weightSlider.value(),
+    detailLevel: detailSlider.value(),
     backgroundEnabled: bgToggle.checked()
   };
 

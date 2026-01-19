@@ -1,5 +1,5 @@
-// === Sclark Studio — Signal/Noise Builder v3.9.5 ===
-// Transparent Rendering + Sub-Pixel Lines + Unified Embed Behavior
+// === Sclark Studio — Signal/Noise Builder v3.9.6 ===
+// Stable Build: Transparency, Embed Code, Safe Initialization, and Carbon Glass UI
 
 let chaos = 0.8, chaosIntensity = 1.2, rippleDepth = 1.2;
 let speed = 0.004, size = 1.0, lineWeight = 1.5, blurAmount = 0.0;
@@ -8,12 +8,12 @@ let lineColor = "#00C8A0", bgColor = "#202324";
 let startColor = "#00C8A0", endColor = "#FF0080", gradientRotation = 0;
 let backgroundEnabled = true;
 
+// Control elements
 let chaosSlider, chaosIntensitySlider, rippleDepthSlider;
 let speedSlider, sizeSlider, weightSlider, blurSlider, spacingSlider;
 let lineColorPicker, bgColorPicker, bgToggle;
 let startColorPicker, endColorPicker, rotationSlider, colorModeSelect;
 let embedOutput, generateBtn, copyBtn;
-
 let gravitySpeed = 0.01, gravityRadius = 100, gravityStrength = 0.4;
 let gravitySpeedSlider, gravityRadiusSlider, gravityStrengthSlider;
 let ringsSlider;
@@ -30,26 +30,55 @@ function setup() {
   createControlPanel();
 }
 
+// ✅ Guard to prevent draw() errors before controls exist
+function controlsReady() {
+  return (
+    chaosSlider &&
+    chaosIntensitySlider &&
+    rippleDepthSlider &&
+    speedSlider &&
+    sizeSlider &&
+    weightSlider &&
+    blurSlider &&
+    spacingSlider &&
+    gravitySpeedSlider &&
+    gravityRadiusSlider &&
+    gravityStrengthSlider &&
+    mouseGravityToggle &&
+    mouseGravitySlider &&
+    ringsSlider &&
+    colorModeSelect &&
+    startColorPicker &&
+    endColorPicker &&
+    lineColorPicker &&
+    bgColorPicker &&
+    bgToggle
+  );
+}
+
 function draw() {
+  // Wait until controls are ready before drawing
+  if (!controlsReady()) return;
+
   drawingContext.globalCompositeOperation = "source-over";
   drawingContext.canvas.style.filter = `blur(${blurSlider.value()}px)`;
 
   if (bgToggle.checked()) {
     background(color(bgColorPicker.value()));
   } else {
-    background(0, 0, 0, 0); // transparent background fix
+    clear(); // true transparency
   }
 
   translate(width / 2, height / 2);
   const scaleFactor = sizeSlider.value();
   scale(scaleFactor);
 
-  const lw = Math.max(0.1, weightSlider.value() / scaleFactor);
+  const lw = Math.max(0.5, weightSlider.value() / scaleFactor);
   strokeWeight(lw);
 
   const ctx = drawingContext;
 
-  // 🎨 Gradient options
+  // 🎨 Gradient setup
   if (colorModeSelect.value() === "Linear") {
     const grad = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
     grad.addColorStop(0, startColorPicker.value());
@@ -122,6 +151,7 @@ function createControlPanel() {
     const lbl = createSpan(text);
     lbl.style("font-size", "11px");
     lbl.style("color", "#ccc");
+    lbl.style("margin", "6px 0");
     lbl.parent(panel);
   }
 
@@ -139,12 +169,13 @@ function createControlPanel() {
     wrap.style("align-items", "center");
     wrap.style("justify-content", "space-between");
     wrap.style("gap", "6px");
+
     const lab = createSpan(label);
     lab.style("font-size", "10px");
     lab.style("color", "#aaa");
     lab.parent(wrap);
+
     el.parent(wrap);
-    el.input(() => val.html(el.value()));
     const val = createSpan(el.value());
     val.style("font-size", "10px");
     val.style("color", "#777");
@@ -161,6 +192,7 @@ function createControlPanel() {
   addControl("Line Weight", (weightSlider = createSlider(0.1, 5, lineWeight, 0.1)));
   addControl("Spacing Expansion", (spacingSlider = createSlider(-3, 3, spacingExpansion, 0.1)));
   addControl("Blur", (blurSlider = createSlider(0, 10, blurAmount, 0.1)));
+  addControl("Rings", (ringsSlider = createSlider(10, 150, 60, 1)));
 
   addDivider();
 
@@ -193,6 +225,7 @@ function createControlPanel() {
   colorModeSelect.option("Solid");
   colorModeSelect.option("Linear");
   colorModeSelect.option("Radial");
+  colorModeSelect.selected("Solid");
   addControl("Mode", colorModeSelect);
   startColorPicker = createColorPicker(startColor);
   endColorPicker = createColorPicker(endColor);
@@ -204,8 +237,8 @@ function createControlPanel() {
 
   addLabel("📤 Embed Code");
   generateBtn = createButton("Generate Embed Code");
-  generateBtn.mousePressed(generateEmbedCode);
   generateBtn.parent(panel);
+  generateBtn.mousePressed(generateEmbedCode);
 
   embedOutput = createElement("textarea");
   embedOutput.attribute("readonly", true);
@@ -239,7 +272,7 @@ function generateEmbedCode() {
     gravityStrength: gravityStrengthSlider.value(),
     mouseGravity: mouseGravityToggle.checked(),
     mouseIntensity: mouseGravitySlider.value(),
-    rings: 60,
+    rings: ringsSlider.value(),
     startColor: startColorPicker.value(),
     endColor: endColorPicker.value(),
     gradientType: colorModeSelect.value(),

@@ -1,5 +1,5 @@
-// === Signal / Noise — Embed Script (v3.9.2) ===
-// Reliable, Webflow-safe p5.js loader with full resize + DOM readiness handling
+// === Signal / Noise — Embed Script (v3.9.5) ===
+// Transparent rendering fix + sub-pixel precision + high-DPI scaling
 
 function initRadialSignal(config) {
   if (!window.p5) {
@@ -13,12 +13,9 @@ function initRadialSignal(config) {
     return;
   }
 
-  // Ensure parent container can hold an absolutely positioned canvas
-  const style = getComputedStyle(el);
-  if (style.position === "static") el.style.position = "relative";
+  if (getComputedStyle(el).position === "static") el.style.position = "relative";
   el.style.overflow = "hidden";
 
-  // Helper: create and mount the p5 instance safely
   const startSketch = () => {
     try {
       new p5((s) => {
@@ -28,7 +25,10 @@ function initRadialSignal(config) {
           const canvas = s.createCanvas(el.offsetWidth, el.offsetHeight);
           canvas.parent(el);
 
-          // Apply Vanta-style resilient canvas styling
+          // High-DPI pixel scaling for sharp sub-pixel lines
+          const dpr = window.devicePixelRatio || 1;
+          s.pixelDensity(dpr);
+
           Object.assign(canvas.elt.style, {
             position: "absolute",
             top: 0,
@@ -47,14 +47,26 @@ function initRadialSignal(config) {
         };
 
         s.draw = () => {
+          // ✅ Transparency & composite fix
+          const ctx = s.drawingContext;
+          ctx.globalCompositeOperation = "source-over";
+
+          if (config.backgroundEnabled) {
+            s.background(0, 0, 0, 255); // solid background mode
+          } else {
+            s.background(0, 0, 0, 0); // true transparent background
+          }
+
           s.drawingContext.canvas.style.filter = `blur(${config.blur}px)`;
-          if (config.backgroundEnabled) s.background(0, 0, 0, 255);
-          else s.clear();
 
           s.translate(s.width / 2, s.height / 2);
+
           const scaleFactor = 1;
           s.scale(scaleFactor);
-          s.strokeWeight(config.lineWeight / scaleFactor);
+
+          // ✅ True sub-pixel precision line weight (supports e.g. 0.5px)
+          const lineWeight = Math.max(0.1, config.lineWeight / scaleFactor);
+          s.strokeWeight(lineWeight);
 
           offsetX1 -= 0.015 * config.speed * 60;
           offsetY1 += 0.01 * config.speed * 60;
@@ -65,8 +77,6 @@ function initRadialSignal(config) {
           const gx = s.cos(s.frameCount * config.gravitySpeed) * config.gravityRadius;
           const gy = s.sin(s.frameCount * config.gravitySpeed) * config.gravityRadius;
           const gStrength = config.gravityStrength;
-
-          const ctx = s.drawingContext;
 
           // 🎨 Gradient rendering
           if (config.gradientType === "Linear") {
@@ -110,7 +120,6 @@ function initRadialSignal(config) {
               let x = radius * s.cos(a);
               let y = radius * s.sin(a);
 
-              // Gravity orbit distortion
               const dx = gx - x;
               const dy = gy - y;
               const d = Math.sqrt(dx * dx + dy * dy);
@@ -118,7 +127,6 @@ function initRadialSignal(config) {
               x += dx * pull * 50;
               y += dy * pull * 50;
 
-              // Mouse gravity interaction
               if (config.mouseGravity) {
                 const mdx = mx - x;
                 const mdy = my - y;
@@ -143,9 +151,7 @@ function initRadialSignal(config) {
     }
   };
 
-  // Webflow-safe and DOM-ready initialization
   if (document.readyState === "complete" || document.readyState === "interactive") {
-    // Webflow sometimes injects content after DOMContentLoaded
     setTimeout(startSketch, 200);
   } else {
     window.Webflow ||= [];

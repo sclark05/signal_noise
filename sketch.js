@@ -1,84 +1,105 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Signal / Noise – Radial Noise Field Builder</title>
+// === Signal / Noise — Radial Field Builder ===
 
-  <!-- Base Styles -->
-  <link rel="stylesheet" href="style.css" />
+let chaosSlider, speedSlider, ringsSlider, lineWeightSlider;
+let gravitySpeedSlider, gravityRadiusSlider, gravityStrengthSlider;
+let bgModeSelect, bgColorPicker, lineColorPicker;
 
-  <!-- Fallback styling in case style.css fails -->
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #0f0f0f;
-      color: #fff;
-      font-family: "Inter", sans-serif;
-      overflow: hidden;
+function setup() {
+  const canvas = createCanvas(windowWidth, windowHeight);
+  canvas.parent("trunkwave");
+  noFill();
+  stroke(255);
+  createControls();
+}
+
+function draw() {
+  if (bgModeSelect.value() === "Transparent") {
+    clear();
+  } else {
+    background(bgColorPicker.value());
+  }
+
+  translate(width / 2, height / 2);
+  stroke(lineColorPicker.value());
+  strokeWeight(lineWeightSlider.value());
+
+  const chaos = chaosSlider.value();
+  const rings = ringsSlider.value();
+  const gravitySpeed = gravitySpeedSlider.value();
+  const gravityRadius = gravityRadiusSlider.value();
+  const gravityStrength = gravityStrengthSlider.value();
+
+  const gx = cos(frameCount * gravitySpeed) * gravityRadius;
+  const gy = sin(frameCount * gravitySpeed) * gravityRadius;
+
+  for (let i = 0; i < rings; i++) {
+    beginShape();
+    for (let a = 0; a < TWO_PI; a += 0.05) {
+      const ripple = 20 * chaos * noise(cos(a) + i * 0.1, sin(a), frameCount * 0.01);
+      let radius = 50 + i * 6 + ripple;
+      let x = radius * cos(a);
+      let y = radius * sin(a);
+
+      const dx = gx - x;
+      const dy = gy - y;
+      const d = sqrt(dx * dx + dy * dy);
+      const pull = gravityStrength / (d + 50);
+      x += dx * pull * 50;
+      y += dy * pull * 50;
+
+      vertex(x, y);
     }
+    endShape(CLOSE);
+  }
+}
 
-    #controls {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 260px;
-      height: 100%;
-      padding: 16px;
-      background: rgba(20, 20, 20, 0.95);
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
-      overflow-y: auto;
-      z-index: 10;
-    }
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
 
-    .title {
-      margin-top: 0;
-      font-size: 16px;
-      color: #00ffcc;
-      font-weight: 600;
-    }
+function createControls() {
+  const panel = select("#controls");
 
-    #trunkwave {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 0;
-    }
-  </style>
+  function addControl(label, element) {
+    const div = createDiv();
+    div.class("control");
+    div.child(createSpan(label));
+    div.child(element);
+    div.parent(panel);
+  }
 
-  <!-- p5.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-</head>
-<body>
-  <div id="controls" class="controls">
-    <h3 class="title">Signal / Noise — Builder</h3>
-  </div>
+  chaosSlider = createSlider(0, 3, 1.2, 0.1);
+  addControl("Chaos", chaosSlider);
 
-  <!-- Render Container -->
-  <div id="trunkwave"></div>
+  speedSlider = createSlider(0, 0.02, 0.004, 0.001);
+  addControl("Speed", speedSlider);
 
-  <!-- Core Sketch -->
-  <script src="sketch.js"></script>
+  ringsSlider = createSlider(10, 120, 80, 1);
+  addControl("Rings", ringsSlider);
 
-  <!-- Safety fallback if sketch.js fails -->
-  <script>
-    window.addEventListener("error", (e) => {
-      if (e.target.tagName === "SCRIPT" && e.target.src.includes("sketch.js")) {
-        console.error("[Signal/Noise] Failed to load sketch.js");
-        const msg = document.createElement("div");
-        msg.style.position = "absolute";
-        msg.style.top = "50%";
-        msg.style.left = "50%";
-        msg.style.transform = "translate(-50%, -50%)";
-        msg.style.color = "#ff5555";
-        msg.style.fontFamily = "monospace";
-        msg.innerText = "⚠️ Failed to load builder script (sketch.js)";
-        document.body.appendChild(msg);
-      }
-    });
-  </script>
-</body>
-</html>
+  lineWeightSlider = createSlider(1, 5, 2, 0.1);
+  addControl("Line Weight", lineWeightSlider);
+
+  gravitySpeedSlider = createSlider(0, 0.05, 0.01, 0.001);
+  addControl("Gravity Speed", gravitySpeedSlider);
+
+  gravityRadiusSlider = createSlider(0, 200, 100, 1);
+  addControl("Gravity Radius", gravityRadiusSlider);
+
+  gravityStrengthSlider = createSlider(0, 1, 0.4, 0.01);
+  addControl("Gravity Strength", gravityStrengthSlider);
+
+  bgModeSelect = createSelect();
+  bgModeSelect.option("Color");
+  bgModeSelect.option("Transparent");
+  bgModeSelect.selected("Color");
+  addControl("Background Mode", bgModeSelect);
+
+  bgColorPicker = createColorPicker("#202324");
+  bgColorPicker.class("color-picker");
+  addControl("Background Color", bgColorPicker);
+
+  lineColorPicker = createColorPicker("#00C8A0");
+  lineColorPicker.class("color-picker");
+  addControl("Line Color", lineColorPicker);
+}

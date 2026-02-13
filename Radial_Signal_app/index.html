@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal / Noise — Builder</title>
+
+  <!-- === Styles === -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- === p5.js CDN === -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f0f0f;
+      color: #fff;
+      font-family: "Inter", sans-serif;
+      overflow: hidden;
+    }
+
+    /* === LEFT PANEL === */
+    #controls {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100%;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    #controls h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #757575;
+    }
+
+    /* === CANVAS AREA === */
+    #trunkwave {
+      position: absolute;
+      top: 0;
+      left: 280px;
+      width: calc(100% - 280px);
+      height: 100%;
+      overflow: hidden;
+    }
+
+    textarea#embedOutput {
+      width: 100%;
+      resize: vertical;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: rgb(54, 60, 69);
+      font-family: monospace;
+      font-size: 11px;
+      padding: 6px;
+      margin-top: 4px;
+    }
+
+    
+
+    button:hover {
+      background: #00c0a0;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* === SCROLL FIX === */
+    #controls::-webkit-scrollbar {
+      width: 6px;
+    }
+    #controls::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- === CONTROL PANEL === -->
+  <div id="controls">
+    <h3>Signal / Noise — Builder</h3>
+    <!-- p5.js will dynamically inject all sliders and embed UI here -->
+  </div>
+
+  <!-- === CANVAS CONTAINER === -->
+  <div id="trunkwave"></div>
+
+  <!-- === SKETCH SCRIPT === -->
+  <script src="sketch.js"></script>
+</body>
+</html>

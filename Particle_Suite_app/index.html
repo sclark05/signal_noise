@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Particle Suite</title>
+  <style>
+    html,body{height:100%;margin:0}
+    #app{display:flex;flex-direction:column;height:100%}
+    #controls{padding:8px;background:#111;color:#fff;display:flex;gap:8px;align-items:center}
+    canvas{flex:1;display:block;width:100%;height:100%}
+    select,input{padding:6px}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="controls">
+      <label>Mode:
+        <select id="modeSelect">
+          <option value="polarRipple">Polar Ripple</option>
+          <option value="noiseField">Noise Field Explorer</option>
+          <option value="harmonicLattice">Harmonic Lattice</option>
+          <option value="textureDistort">Texture Distorter</option>
+        </select>
+      </label>
+      <label>Particles: <input id="count" type="range" min="100" max="3000" value="800"/></label>
+      <button id="pause">Pause</button>
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script type="module">
+    import ParticleEngine from './core/particleEngine.js';
+
+    const canvas = document.getElementById('canvas');
+    const modeSelect = document.getElementById('modeSelect');
+    const count = document.getElementById('count');
+    const pauseBtn = document.getElementById('pause');
+
+    const engine = new ParticleEngine(canvas, {particleCount: +count.value});
+
+    async function loadMode(name){
+      const mod = await import(`./modes/${name}.js`);
+      engine.setMode(mod.default);
+    }
+
+    modeSelect.addEventListener('change', e=> loadMode(e.target.value));
+    count.addEventListener('input', e=> engine.setParticleCount(+e.target.value));
+    pauseBtn.addEventListener('click', ()=>{
+      if(engine.running){ engine.stop(); pauseBtn.textContent='Resume'; } else { engine.start(); pauseBtn.textContent='Pause'; }
+    });
+
+    // initial
+    await loadMode(modeSelect.value);
+    engine.start();
+
+    // resize handling
+    window.addEventListener('resize', ()=> engine.resize());
+  </script>
+</body>
+</html>

@@ -7,6 +7,7 @@ export default class ParticleEngine {
     this.running = false;
     this.particleCount = opts.particleCount || 800;
     this.last = performance.now();
+    this.modeControls = null;
     this.resize();
   }
 
@@ -24,9 +25,23 @@ export default class ParticleEngine {
   }
 
   setMode(modeModule){
-    if(this.mode && this.mode.destroy) this.mode.destroy(this);
+    // cleanup previous
+    if(this.mode){
+      if(this.mode.destroy) this.mode.destroy(this);
+      // ensure UI detach if provided
+      if(this.mode.detachUI && this.modeControls) this.mode.detachUI(this, this.modeControls);
+    }
+
     this.mode = modeModule;
+
+    // let the mode initialize with engine reference
     if(this.mode.init) this.mode.init(this);
+
+    // attach pointer hooks if the mode wants them
+    if(this.mode.attachPointer && this.canvas) this.mode.attachPointer(this.canvas);
+
+    // attach UI controls area if provided
+    if(this.mode.attachUI && this.modeControls) this.mode.attachUI(this, this.modeControls);
   }
 
   start(){
@@ -53,8 +68,9 @@ export default class ParticleEngine {
 
   _draw(){
     const ctx = this.ctx;
-    // simple fade trail
-    ctx.fillStyle = 'rgba(10,10,12,0.15)';
+    // simple fade trail; allow modes to override trailAlpha
+    const alpha = (this.mode && this.mode.trailAlpha !== undefined) ? this.mode.trailAlpha : 0.15;
+    ctx.fillStyle = `rgba(10,10,12,${alpha})`;
     ctx.fillRect(0,0,this.canvas.clientWidth, this.canvas.clientHeight);
     if(this.mode && this.mode.draw) this.mode.draw(this, ctx);
   }

@@ -15,12 +15,14 @@
 <body>
   <div id="app">
     <div id="controls">
+      <div id="modeControls" style="display:flex;gap:8px;align-items:center"></div>
       <label>Mode:
         <select id="modeSelect">
           <option value="polarRipple">Polar Ripple</option>
           <option value="noiseField">Noise Field Explorer</option>
           <option value="harmonicLattice">Harmonic Lattice</option>
           <option value="textureDistort">Texture Distorter</option>
+          <option value="gravitationalCore">Gravitational Core</option>
         </select>
       </label>
       <label>Particles: <input id="count" type="range" min="100" max="3000" value="800"/></label>
@@ -38,6 +40,7 @@
     const pauseBtn = document.getElementById('pause');
 
     const engine = new ParticleEngine(canvas, {particleCount: +count.value});
+    engine.modeControls = document.getElementById('modeControls');
 
     async function loadMode(name){
       const mod = await import(`./modes/${name}.js`);

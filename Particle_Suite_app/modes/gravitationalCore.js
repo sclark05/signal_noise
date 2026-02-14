@@ -1,20 +1,24 @@
 // Gravitational Core mode: central attractor with inverse-square force
 export default {
   name: 'Gravitational Core',
-  // allow engine to use a slightly stronger trail
-  trailAlpha: 0.08,
+  // stronger trail for persistence (engine overlay uses this)
+  trailAlpha: 0.10,
   init(engine){
     const w = engine.canvas.clientWidth, h = engine.canvas.clientHeight;
     this.particles = new Array(engine.particleCount).fill().map(()=>({
       x: Math.random()*w,
       y: Math.random()*h,
       vx: (Math.random()-0.5)*40,
-      vy: (Math.random()-0.5)*40
+      vy: (Math.random()-0.5)*40,
+      // mass influences how quickly particle turns/responds (higher = heavier)
+      mass: 0.8 + Math.random()*1.6
     }));
     this.attractor = {x: w/2, y: h/2};
     this.gravity = 8000; // strength scalar
-    this.damping = 0.995; // friction per frame
+    this.damping = 0.995; // friction per frame (air resistance)
     this._listeners = [];
+    this._ui = null;
+    this.massVariation = 1.6;
   },
   setParticleCount(engine,n){ this.init(engine); },
   attachPointer(canvas){
@@ -51,6 +55,20 @@ export default {
 
     this._ui.appendChild(gLabel);
     this._ui.appendChild(dLabel);
+    
+    // Mass variation control
+    const mLabel = document.createElement('label');
+    mLabel.textContent = 'Mass Var:';
+    const mSlider = document.createElement('input');
+    mSlider.type = 'range'; mSlider.min = '0.2'; mSlider.max = '2.5'; mSlider.step = '0.05'; mSlider.value = String(this.massVariation);
+    mSlider.style.width = '140px';
+    mSlider.addEventListener('input', ()=>{
+      this.massVariation = +mSlider.value;
+      for(const p of this.particles) p.mass = 0.6 + Math.random() * this.massVariation;
+    });
+    mLabel.appendChild(mSlider);
+    this._ui.appendChild(mLabel);
+
     container.appendChild(this._ui);
   },
   detachUI(engine, container){

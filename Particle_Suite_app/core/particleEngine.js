@@ -70,7 +70,7 @@ export default class ParticleEngine {
     const ctx = this.ctx;
     // simple fade trail; allow modes to override trailAlpha
     const alpha = (this.mode && this.mode.trailAlpha !== undefined) ? this.mode.trailAlpha : 0.15;
-    ctx.fillStyle = `rgba(10,10,12,${alpha})`;
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
     ctx.fillRect(0,0,this.canvas.clientWidth, this.canvas.clientHeight);
     if(this.mode && this.mode.draw) this.mode.draw(this, ctx);
   }

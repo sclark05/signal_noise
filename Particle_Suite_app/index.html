@@ -5,29 +5,82 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Particle Suite</title>
   <style>
-    html,body{height:100%;margin:0}
-    #app{display:flex;flex-direction:column;height:100%}
-    #controls{padding:8px;background:#111;color:#fff;display:flex;gap:8px;align-items:center}
-    canvas{flex:1;display:block;width:100%;height:100%}
-    select,input{padding:6px}
+    :root{--sidebar-w:300px}
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    #app{height:100%;position:relative;overflow:hidden}
+
+    /* Sidebar - glassmorphism */
+    #sidebar{
+      position:fixed;left:12px;top:12px;bottom:12px;width:var(--sidebar-w);
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
+      border-radius:12px;padding:16px;box-sizing:border-box;
+      color: #f5f7fb;display:flex;flex-direction:column;gap:12px;align-items:stretch;z-index:30;
+      /* allow clicks through empty areas while keeping controls interactive */
+      pointer-events:none;
+    }
+
+    #sidebar .control-group{display:flex;flex-direction:column;gap:8px}
+    #sidebar h3{margin:0 0 4px 0;font-size:13px;color:#fff}
+    .control-item{pointer-events:auto}
+
+    /* Canvas fills full area */
+    canvas{position:absolute;left:0;top:0;right:0;bottom:0;width:100%;height:100%;display:block}
+
+    /* Controls appearance */
+    label{font-size:13px;color:#eef;display:flex;flex-direction:column;gap:6px}
+    select,input[type=range]{appearance:none;background:transparent}
+    button{padding:8px 10px;border-radius:6px;border:none;background:rgba(255,255,255,0.06);color:#fff;cursor:pointer}
+
+    /* Modern slider styling */
+    input[type=range]{height:28px}
+    input[type=range]::-webkit-slider-runnable-track{height:6px;background:rgba(255,255,255,0.12);border-radius:999px}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);margin-top:-4px}
+    input[type=range]:focus{outline:none}
+
+    /* compact top bar for mode selector */
+    #topBar{position:fixed;left:calc(var(--sidebar-w) + 28px);top:12px;right:12px;height:48px;display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:linear-gradient(180deg, rgba(0,0,0,0.24), rgba(0,0,0,0.12));z-index:20}
+    #topBar select{padding:6px 10px;border-radius:6px;background:rgba(255,255,255,0.04);color:#fff;border:1px solid rgba(255,255,255,0.06)}
   </style>
 </head>
 <body>
   <div id="app">
-    <div id="controls">
-      <div id="modeControls" style="display:flex;gap:8px;align-items:center"></div>
-      <label>Mode:
-        <select id="modeSelect">
-          <option value="polarRipple">Polar Ripple</option>
-          <option value="noiseField">Noise Field Explorer</option>
-          <option value="harmonicLattice">Harmonic Lattice</option>
-          <option value="textureDistort">Texture Distorter</option>
-          <option value="gravitationalCore">Gravitational Core</option>
-        </select>
-      </label>
-      <label>Particles: <input id="count" type="range" min="100" max="3000" value="800"/></label>
-      <button id="pause">Pause</button>
+    <aside id="sidebar">
+      <div class="control-group">
+        <h3>Primary Controls</h3>
+        <div class="control-item">
+          <label>Particles: <input id="count" type="range" min="100" max="3000" value="800"/></label>
+        </div>
+        <div class="control-item">
+          <button id="pause">Pause</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h3>Mode Specific</h3>
+        <div id="modeControls" class="control-item" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="control-group">
+        <h3>Modes</h3>
+        <div class="control-item">
+          <select id="modeSelect">
+            <option value="polarRipple">Polar Ripple</option>
+            <option value="noiseField">Noise Field Explorer</option>
+            <option value="harmonicLattice">Harmonic Lattice</option>
+            <option value="textureDistort">Texture Distorter</option>
+            <option value="gravitationalCore">Gravitational Core</option>
+          </select>
+        </div>
+      </div>
+    </aside>
+
+    <div id="topBar">
+      <div style="color:#fff;font-weight:600">Particle Suite</div>
     </div>
+
     <canvas id="canvas"></canvas>
   </div>
 

@@ -3,18 +3,18 @@
  * Load site-wide (footer, defer). Add this to the site <head> so a page reached through the transition
  * starts covered and never flashes (colour must match data-color below):
  *
- *   <style>html.scs-pt-in::after{content:"";position:fixed;inset:0;z-index:2147483646;background:#1D4ED8;
+ *   <style>html.scs-pt-in::after{content:"";position:fixed;inset:0;z-index:2147483646;background:#F4EFE6;
  *     animation:scs-pt-fail 0s 1.5s forwards}@keyframes scs-pt-fail{to{visibility:hidden}}</style>
  *   <script>try{if(sessionStorage.getItem("scs-pt")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)
  *     document.documentElement.classList.add("scs-pt-in")}catch(e){}</script>
  *
- * Options: <html data-pt-color="#1D4ED8" data-pt-bars="12" data-pt-duration="620">
+ * Options: <html data-pt-color="#F4EFE6" data-pt-bars="12" data-pt-duration="620">
  * Opt a link out with data-no-transition. Reduced motion: no transition at all.
  */
 (function () {
   "use strict";
   var KEY = "scs-pt", root = document.documentElement, ds = root.dataset;
-  var COLOR = ds.ptColor || "#1D4ED8", BARS = parseInt(ds.ptBars, 10) || 12, DUR = parseInt(ds.ptDuration, 10) || 620;
+  var COLOR = ds.ptColor || "#F4EFE6", BARS = parseInt(ds.ptBars, 10) || 12, DUR = parseInt(ds.ptDuration, 10) || 620;
   var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var dpr = Math.min(window.devicePixelRatio || 1, 2), busy = false, cv, cx;
 

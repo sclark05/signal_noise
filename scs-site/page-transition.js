@@ -1,14 +1,10 @@
-/*! scs-site/page-transition.js v1.0.0 — Scott Clark Studio "wave" page transition. No dependencies.
+/*! scs-site/page-transition.js v1.0.1 — Scott Clark Studio "wave" page transition. No dependencies.
  *
- * Load site-wide (footer, defer). Add this to the site <head> so a page reached through the transition
- * starts covered and never flashes (colour must match data-color below):
+ * Load site-wide (footer). A small no-flash snippet also goes in the site head so a page reached through
+ * the transition starts covered: see scs-site/README.md ("Page transition head snippet"). It is not
+ * repeated here, because a literal closing script tag inside this file breaks the page when the file is inlined.
  *
- *   <style>html.scs-pt-in::after{content:"";position:fixed;inset:0;z-index:2147483646;background:#F4EFE6;
- *     animation:scs-pt-fail 0s 1.5s forwards}@keyframes scs-pt-fail{to{visibility:hidden}}</style>
- *   <script>try{if(sessionStorage.getItem("scs-pt")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)
- *     document.documentElement.classList.add("scs-pt-in")}catch(e){}</script>
- *
- * Options: <html data-pt-color="#F4EFE6" data-pt-bars="12" data-pt-duration="620">
+ * Options: html data-pt-color="#F4EFE6" data-pt-bars="12" data-pt-duration="620"
  * Opt a link out with data-no-transition. Reduced motion: no transition at all.
  */
 (function () {

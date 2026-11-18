@@ -27,3 +27,13 @@ Motion: `wave` `drift` `breathe` `cascade`. Texture: `letterpress` `halftone` `l
 1. Merge to `main`.
 2. Tag `scs-site-vX.Y.Z` and push the tag.
 3. In Webflow, register the new URL with its SRI hash and bump the version.
+
+## Page transition head snippet
+Put this in the head code of every page that loads `page-transition.js` (match the colour to `data-pt-color`):
+
+```html
+<style>html.scs-pt-in::after{content:"";position:fixed;inset:0;z-index:2147483646;background:#F4EFE6;animation:scs-pt-fail 0s 1.5s forwards}@keyframes scs-pt-fail{to{visibility:hidden}}</style>
+<script>try{if(sessionStorage.getItem("scs-pt")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("scs-pt-in")}catch(e){}</script>
+```
+
+**Never put a literal `</script>` or `</style>` in any of the `.js` files, even in a comment.** If Webflow inlines a file, that tag ends the script early and the rest of the code shows on the page as text.

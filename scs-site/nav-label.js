@@ -1,4 +1,4 @@
-/*! scs-site/nav-label.js v1.1.1 — Scott Clark Studio label nav menu. No dependencies.
+/*! scs-site/nav-label.js v1.1.2 — Scott Clark Studio label nav menu. No dependencies.
  *
  * Markup (Webflow, nav-label_component):
  *   <nav data-nav-label aria-label="Primary">
@@ -17,6 +17,16 @@
  */
 (function () {
   "use strict";
+  /* Webflow renders these toggles as <a>; make any non-<button> behave like one (focusable, Space/Enter, no "#" jump). */
+  function asButton(el) {
+    if (el.tagName === "BUTTON") return;
+    el.setAttribute("role", "button");
+    var noHref = !el.hasAttribute("href");
+    if (noHref) el.tabIndex = 0;
+    el.addEventListener("keydown", function (e) {
+      if (e.key === " " || e.key === "Spacebar" || (noHref && e.key === "Enter")) { e.preventDefault(); el.click(); }
+    });
+  }
   function setup(nav) {
     var btn = nav.querySelector("[data-nav-label-toggle]"), panel = nav.querySelector("[data-nav-label-panel]");
     if (!btn || !panel) return;
@@ -49,7 +59,8 @@
       else if (focusBtn) btn.focus();
     }
     set(false);
-    btn.addEventListener("click", function () { set(btn.getAttribute("aria-expanded") !== "true"); });
+    asButton(btn);
+    btn.addEventListener("click", function (e) { e.preventDefault(); set(btn.getAttribute("aria-expanded") !== "true"); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && nav.classList.contains("is-open")) set(false, true); });
     document.addEventListener("click", function (e) { if (nav.classList.contains("is-open") && !nav.contains(e.target)) set(false); });
     panel.addEventListener("click", function (e) { if (e.target.closest("a")) set(false); });

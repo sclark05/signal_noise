@@ -1,4 +1,4 @@
-/*! scs-site/ruled-bars.js v1.1.0 — Scott Clark Studio ruled bars (home hero + inline uses). No dependencies.
+/*! scs-site/ruled-bars.js v1.1.1 — Scott Clark Studio ruled bars (home hero + inline uses). No dependencies.
  *
  * Markup (Webflow):
  *   <header class="section_home-hero">           position:fixed; inset:0; height:100svh
@@ -21,6 +21,16 @@
  */
 (function () {
   "use strict";
+  /* Webflow renders these toggles as <a>; make any non-<button> behave like one (focusable, Space/Enter, no "#" jump). */
+  function asButton(el) {
+    if (el.tagName === "BUTTON") return;
+    el.setAttribute("role", "button");
+    var noHref = !el.hasAttribute("href");
+    if (noHref) el.tabIndex = 0;
+    el.addEventListener("keydown", function (e) {
+      if (e.key === " " || e.key === "Spacebar" || (noHref && e.key === "Enter")) { e.preventDefault(); el.click(); }
+    });
+  }
 
   var DEFAULTS = {
     ink: "#F4EFE6", motion: "wave", count: 11, thick: 0.78, thin: 0.34, soft: 0.23, stagger: 0.014,
@@ -209,7 +219,9 @@
     if (btn) {
       if (this.reduced) { btn.hidden = true; return; }
       var label = btn.querySelector("span") || btn;
-      this._onBtn = function () {
+      asButton(btn);
+      this._onBtn = function (e) {
+        if (e) e.preventDefault();
         self.paused = !self.paused; btn.setAttribute("aria-pressed", String(self.paused));
         label.textContent = self.paused ? "Play motion" : "Pause motion"; self.last = 0; self._kick();
       };

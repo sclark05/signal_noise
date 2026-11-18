@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ruled Bars — Builder</title>
+  <!--
+    Ruled Bars builder (Scott Clark Studio). Drives the production script, ../scs-site/ruled-bars.js,
+    so what you see here is exactly what ships on the site. Tune the field, then copy the Webflow
+    custom attributes (only values that differ from the script's defaults are listed).
+  -->
+  <style>
+    :root { --panel: #141414; --line: #2a2a2a; --text: #f2f2f2; --muted: #9a9a9a; --accent: #c6ff00; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #0f0f0f; color: var(--text); font: 13px/1.4 "Inter", system-ui, sans-serif; overflow: hidden; }
+    #controls { position: absolute; inset: 0 auto 0 0; width: 300px; overflow-y: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 16px 16px 32px; z-index: 2; }
+    h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: -0.01em; }
+    .sub { color: var(--muted); margin: 0 0 14px; font-size: 12px; }
+    fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 12px 0 6px; }
+    legend { padding: 0 0 8px; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+    label.row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; margin: 0 0 10px; }
+    label.row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+    output { color: var(--muted); font-variant-numeric: tabular-nums; }
+    select, input[type=color] { width: 100%; background: #1e1e1e; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
+    input[type=color] { height: 32px; padding: 2px; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .pair label { display: grid; gap: 4px; color: var(--text); }
+    .checks { display: flex; gap: 16px; margin-bottom: 8px; }
+    .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    button { background: #1e1e1e; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; font: inherit; cursor: pointer; }
+    button:hover, button:focus-visible { border-color: var(--accent); }
+    button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+    textarea { width: 100%; min-height: 120px; background: #0b0b0b; color: #d8ffd0; border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+    .note { color: var(--muted); font-size: 11px; margin: 6px 0 0; }
+    #stage { position: absolute; inset: 0 0 0 300px; }
+    #field { position: absolute; inset: 0; }
+    #stage.is-band #field { inset: auto 0 calc(50% - 130px) 0; height: 260px; }
+    #toast { position: absolute; right: 16px; bottom: 16px; background: var(--accent); color: #111; padding: 8px 12px; border-radius: 4px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    #toast.on { opacity: 1; }
+    @media (max-width: 700px) { #controls { width: 100%; height: 55%; inset: auto 0 0 0; border-right: 0; border-top: 1px solid var(--line); } #stage { inset: 0 0 55% 0; } }
+  </style>
+</head>
+<body>
+  <aside id="controls" aria-label="Ruled bars settings">
+    <h1>Ruled Bars — Builder</h1>
+    <p class="sub">Drives the live site script. Copy the attributes into Webflow.</p>
+
+    <fieldset><legend>Presets</legend>
+      <div class="btns">
+        <button type="button" data-preset="hero">Home hero</button>
+        <button type="button" data-preset="footer">Footer band</button>
+        <button type="button" data-preset="defaults">Script defaults</button>
+      </div>
+    </fieldset>
+
+    <fieldset><legend>Bars</legend>
+      <label class="row">Count <output data-o="count"></output><input type="range" data-k="count" min="2" max="40" step="1"></label>
+      <label class="row">Thick weight <output data-o="thick"></output><input type="range" data-k="thick" min="0.3" max="0.95" step="0.01"></label>
+      <label class="row">Thin weight <output data-o="thin"></output><input type="range" data-k="thin" min="0.02" max="0.7" step="0.01"></label>
+      <label class="row">Taper length <output data-o="soft"></output><input type="range" data-k="soft" min="0.02" max="0.4" step="0.01"></label>
+      <label class="row">Stagger <output data-o="stagger"></output><input type="range" data-k="stagger" min="-0.06" max="0.06" step="0.002"></label>
+    </fieldset>
+
+    <fieldset><legend>Motion</legend>
+      <label class="row" style="grid-template-columns:1fr">Type
+        <select data-k="motion"><option value="wave">wave</option><option value="drift">drift</option><option value="breathe">breathe</option><option value="ripple">ripple</option></select>
+      </label>
+      <label class="row">Speed <output data-o="speed"></output><input type="range" data-k="speed" min="0" max="3" step="0.01"></label>
+      <label class="row">Travel <output data-o="travel"></output><input type="range" data-k="travel" min="0" max="0.5" step="0.01"></label>
+      <label class="row">Cursor pull <output data-o="follow"></output><input type="range" data-k="follow" min="0" max="1" step="0.05"></label>
+      <label class="row">Cursor lens <output data-o="lens"></output><input type="range" data-k="lens" min="0" max="400" step="10"></label>
+    </fieldset>
+
+    <fieldset><legend>Print texture</legend>
+      <label class="row" style="grid-template-columns:1fr">Texture
+        <select data-k="texture"><option value="stipple">stipple</option><option value="halftone">halftone</option><option value="lines">lines</option><option value="letterpress">letterpress (flat)</option></select>
+      </label>
+      <label class="row">Screen size <output data-o="cell"></output><input type="range" data-k="cell" min="3" max="30" step="1"></label>
+      <label class="row">Screen angle <output data-o="angle"></output><input type="range" data-k="angle" min="0" max="90" step="5"></label>
+      <label class="row">Coverage <output data-o="cover"></output><input type="range" data-k="cover" min="0.2" max="1" step="0.02"></label>
+      <label class="row">Ink wear <output data-o="wear"></output><input type="range" data-k="wear" min="0" max="1" step="0.05"></label>
+    </fieldset>
+
+    <fieldset><legend>Colour &amp; layout</legend>
+      <div class="pair">
+        <label>Ink <input type="color" data-k="ink"></label>
+        <label>Background <input type="color" id="bg"></label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="flipx"> Flip (mirror left/right)</label>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="flipy"> Flop (mirror top/bottom)</label>
+      </div>
+      <label class="row" style="grid-template-columns:1fr">Preview frame
+        <select id="frame"><option value="full">Full screen (hero)</option><option value="band">Footer band (260px, full width)</option></select>
+      </label>
+      <div class="btns"><button type="button" id="pause" aria-pressed="false">Pause motion</button></div>
+      <p class="note">Background is preview only: on the site it comes from the section's colour.</p>
+    </fieldset>
+
+    <fieldset><legend>Webflow attributes</legend>
+      <textarea id="out" readonly aria-label="Webflow custom attributes"></textarea>
+      <div class="btns" style="margin-top:8px">
+        <button type="button" class="primary" id="copy">Copy attributes</button>
+        <button type="button" id="copyhtml">Copy as HTML</button>
+        <button type="button" id="copylink">Copy share link</button>
+      </div>
+      <p class="note">Only values that differ from the script defaults are listed. In Webflow: select the bars element → Element settings → Custom attributes, one row per line (name, then value). Delete any you no longer want to fall back to the default.</p>
+    </fieldset>
+  </aside>
+
+  <main id="stage" aria-label="Preview"><div id="field"></div><div id="toast" role="status" aria-live="polite"></div></main>
+
+  <script src="../scs-site/ruled-bars.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    // Script defaults (mirror of DEFAULTS in scs-site/ruled-bars.js) — used to list only overrides.
+    var DEF = { ink: "#F4EFE6", motion: "wave", count: 11, thick: 0.78, thin: 0.34, soft: 0.23, stagger: 0.014,
+      speed: 1, travel: 0.2, follow: 0.7, lens: 160, texture: "stipple", cell: 17, angle: 45, cover: 1, wear: 1 };
+    var PRESETS = {
+      hero: { s: { ink: "#F5F3EF" }, flip: "", bg: "#1D4ED8", frame: "full" },
+      footer: { s: { ink: "#F5F3EF", count: 8 }, flip: "xy", bg: "#1D4ED8", frame: "band" },
+      defaults: { s: {}, flip: "", bg: "#1D4ED8", frame: "full" }
+    };
+    var KEYS = Object.keys(DEF);
+    var state = {}, flip = "", bg = "#1D4ED8", bars = null, paused = false;
+    var field = document.getElementById("field"), stage = document.getElementById("stage");
+
+    function round(v) { return Math.round(v * 1000) / 1000; }
+    function opts() { var o = {}; KEYS.forEach(function (k) { o[k] = state[k]; }); return o; }
+
+    function build() {
+      if (bars) bars.destroy();
+      field.innerHTML = "";
+      field.setAttribute("data-ruled-bars", "");
+      field.setAttribute("data-mode", "inline");
+      if (flip) field.setAttribute("data-flip", flip); else field.removeAttribute("data-flip");
+      KEYS.forEach(function (k) { field.setAttribute("data-" + k, state[k]); });
+      bars = new window.ScsRuledBars(field);
+      if (paused) bars.pause();
+    }
+
+    function syncControls() {
+      document.querySelectorAll("[data-k]").forEach(function (el) {
+        var k = el.getAttribute("data-k"); el.value = state[k];
+        var o = document.querySelector('[data-o="' + k + '"]'); if (o) o.textContent = state[k];
+      });
+      document.getElementById("flipx").checked = /x/.test(flip);
+      document.getElementById("flipy").checked = /y/.test(flip);
+      document.getElementById("bg").value = bg;
+      stage.style.background = bg;
+    }
+
+    function attrs() {
+      var lines = [];
+      KEYS.forEach(function (k) {
+        var v = state[k], d = DEF[k];
+        var same = typeof d === "number" ? Math.abs(v - d) < 1e-9 : String(v).toLowerCase() === String(d).toLowerCase();
+        if (!same) lines.push(["data-" + k, String(v)]);
+      });
+      if (flip) lines.push(["data-flip", flip]);
+      return lines;
+    }
+
+    function render() {
+      var lines = attrs();
+      document.getElementById("out").value = lines.length
+        ? lines.map(function (l) { return l[0] + "  =  " + l[1]; }).join("\n")
+        : "(all defaults — only data-ruled-bars is needed)";
+      var q = new URLSearchParams();
+      lines.forEach(function (l) { q.set(l[0].replace("data-", ""), l[1]); });
+      if (bg.toLowerCase() !== "#1d4ed8") q.set("bg", bg);
+      if (stage.classList.contains("is-band")) q.set("frame", "band");
+      history.replaceState(null, "", q.toString() ? "#" + q.toString() : location.pathname);
+    }
+
+    function load(preset) {
+      var p = PRESETS[preset];
+      KEYS.forEach(function (k) { state[k] = DEF[k]; });
+      Object.keys(p.s).forEach(function (k) { state[k] = p.s[k]; });
+      flip = p.flip; bg = p.bg; setFrame(p.frame);
+      syncControls(); build(); render();
+    }
+
+    function fromHash() {
+      if (!location.hash) return false;
+      var q = new URLSearchParams(location.hash.slice(1));
+      KEYS.forEach(function (k) {
+        state[k] = DEF[k];
+        if (q.has(k)) state[k] = typeof DEF[k] === "number" ? parseFloat(q.get(k)) : q.get(k);
+      });
+      flip = q.get("flip") || ""; bg = q.get("bg") || "#1D4ED8"; setFrame(q.get("frame") || (flip ? "band" : "full"));
+      return true;
+    }
+
+    function setFrame(f) {
+      stage.classList.toggle("is-band", f === "band");
+      document.getElementById("frame").value = f;
+    }
+    document.getElementById("frame").addEventListener("change", function (e) { setFrame(e.target.value); });
+
+    var flash = 0;
+    function toast(msg) {
+      var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("on");
+      clearTimeout(flash); flash = setTimeout(function () { t.classList.remove("on"); }, 1400);
+    }
+    function copy(text, msg) {
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { toast(msg); },
+        function () { var ta = document.getElementById("out"); ta.value = text; ta.select(); toast("Selected — press Cmd/Ctrl+C"); });
+    }
+
+    document.querySelectorAll("[data-k]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var k = el.getAttribute("data-k");
+        state[k] = el.type === "range" ? round(parseFloat(el.value)) : el.value;
+        var o = document.querySelector('[data-o="' + k + '"]'); if (o) o.textContent = state[k];
+        var change = {}; change[k] = state[k];
+        if (bars) bars.set(change);
+        render();
+      });
+    });
+    function setFlip() {
+      flip = (document.getElementById("flipx").checked ? "x" : "") + (document.getElementById("flipy").checked ? "y" : "");
+      build(); render();
+    }
+    document.getElementById("flipx").addEventListener("change", setFlip);
+    document.getElementById("flipy").addEventListener("change", setFlip);
+    document.getElementById("bg").addEventListener("input", function (e) { bg = e.target.value; stage.style.background = bg; render(); });
+    document.querySelectorAll("[data-preset]").forEach(function (b) { b.addEventListener("click", function () { load(b.getAttribute("data-preset")); }); });
+    document.getElementById("pause").addEventListener("click", function (e) {
+      paused = !paused; e.currentTarget.setAttribute("aria-pressed", String(paused));
+      e.currentTarget.textContent = paused ? "Play motion" : "Pause motion";
+      if (bars) { if (paused) bars.pause(); else bars.play(); }
+    });
+    document.getElementById("copy").addEventListener("click", function () {
+      var l = attrs(); copy(l.length ? l.map(function (x) { return x[0] + "\t" + x[1]; }).join("\n") : "", "Attributes copied");
+    });
+    document.getElementById("copyhtml").addEventListener("click", function () {
+      var a = attrs().map(function (x) { return " " + x[0] + '="' + x[1] + '"'; }).join("");
+      copy('<div data-ruled-bars data-mode="inline"' + a + ' aria-hidden="true"></div>', "HTML copied");
+    });
+    document.getElementById("copylink").addEventListener("click", function () { copy(location.href, "Link copied"); });
+
+    if (fromHash()) { syncControls(); build(); render(); } else load("hero");
+  })();
+  </script>
+</body>
+</html>

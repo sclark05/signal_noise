@@ -1,4 +1,4 @@
-/*! scs-site/ruled-bars.js v1.0.0 — Scott Clark Studio home hero. No dependencies.
+/*! scs-site/ruled-bars.js v1.1.0 — Scott Clark Studio ruled bars (home hero + inline uses). No dependencies.
  *
  * Markup (Webflow):
  *   <header class="section_home-hero">           position:fixed; inset:0; height:100svh
@@ -9,6 +9,15 @@
  *
  * Every setting is a data attribute on the field (see DEFAULTS); missing ones fall back to the defaults.
  * Honours prefers-reduced-motion (one still frame, no parallax, toggle hidden).
+ *
+ * v1.1.0 (DEC-093) — inline use, e.g. the footer:
+ *   <footer data-ruled-bars-zone>
+ *     <div data-ruled-bars data-mode="inline" data-flip="xy" ...></div>
+ *     <button data-ruled-bars-toggle aria-pressed="false"><span>Pause motion</span></button>
+ *   </footer>
+ *   data-mode="inline": no parallax, shade or hide-on-scroll; animates only while on screen.
+ *   data-flip="x" | "y" | "xy": mirror the field (cursor pull and lens follow the mirror).
+ *   A toggle is looked up inside the nearest [data-ruled-bars-zone] (inline) or the hero.
  */
 (function () {
   "use strict";
@@ -25,6 +34,8 @@
   function readOpts(el) {
     var o = {}, k, ds = el.dataset;
     for (k in DEFAULTS) o[k] = DEFAULTS[k];
+    o.inline = ds.mode === "inline";
+    o.fx = /x/.test(ds.flip || "") ? -1 : 1; o.fy = /y/.test(ds.flip || "") ? -1 : 1;
     ["ink", "motion", "texture"].forEach(function (k) { if (ds[k]) o[k] = ds[k]; });
     NUM.forEach(function (k) { if (ds[k] != null && isFinite(parseFloat(ds[k]))) o[k] = parseFloat(ds[k]); });
     o.count = Math.max(1, Math.round(o.count));
@@ -34,14 +45,16 @@
   function RuledBars(field) {
     this.field = field;
     this.o = readOpts(field);
-    this.hero = field.closest("[data-ruled-bars-hero]") || field.closest("header, section") || field.parentElement;
-    this.shade = document.querySelector("[data-ruled-bars-shade]");
+    this.hero = this.o.inline ? null : (field.closest("[data-ruled-bars-hero]") || field.closest("header, section") || field.parentElement);
+    this.zone = this.o.inline ? (field.closest("[data-ruled-bars-zone]") || field.parentElement) : this.hero;
+    this.shade = this.o.inline ? null : document.querySelector("[data-ruled-bars-shade]");
     this.reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.fine = matchMedia("(pointer: fine)").matches;
     this.dpr = Math.min(window.devicePixelRatio || 1, this.o.maxDpr);
     var cv = this.cv = document.createElement("canvas");
     cv.setAttribute("aria-hidden", "true");
-    cv.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block";
+    cv.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block" +
+      (this.o.fx < 0 || this.o.fy < 0 ? ";transform:scale(" + this.o.fx + "," + this.o.fy + ")" : "");
     if (getComputedStyle(field).position === "static") field.style.position = "relative";
     field.appendChild(cv);
     this.c = cv.getContext("2d");
@@ -161,6 +174,7 @@
 
   /* fixed hero: drift up behind the content, darken as it is covered, stop animating once covered */
   RuledBars.prototype._scroll = function () {
+    if (this.o.inline) return;
     var vh = window.innerHeight, y = window.scrollY, o = this.o;
     if (!this.reduced && o.parallax) this.hero.style.transform = "translate3d(0," + (-y * o.parallax).toFixed(1) + "px,0)";
     if (this.shade) this.shade.style.opacity = (Math.min(1, y / vh) * o.shade).toFixed(3);
@@ -175,18 +189,23 @@
     this._onVis = function () { self._kick(); };
     this._ro = new ResizeObserver(function () { self._resize(); self._frame(performance.now(), true); });
     this._ro.observe(this.field);
+    if (this.o.inline && "IntersectionObserver" in window) {
+      this._io = new IntersectionObserver(function (es) { self.visible = es[0].isIntersecting; self._kick(); }, { rootMargin: "80px" });
+      this._io.observe(this.field);
+    }
     addEventListener("scroll", this._onScroll, { passive: true });
     document.addEventListener("visibilitychange", this._onVis);
     if (this.fine && !this.reduced) {
       this._onMove = function (e) {
         var r = self.field.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+        if (self.o.fx < 0) x = r.width - x; if (self.o.fy < 0) y = r.height - y;
         var inside = x >= -40 && y >= -40 && x <= r.width + 40 && y <= r.height + 40;
         if (inside && !self.cur.on) { self.cur.x = x; self.cur.y = y; }
         self.cur.tx = x; self.cur.ty = y; self.cur.on = inside;
       };
       addEventListener("pointermove", this._onMove, { passive: true });
     }
-    var btn = this.btn = (this.hero || document).querySelector("[data-ruled-bars-toggle]");
+    var btn = this.btn = (this.zone || document).querySelector("[data-ruled-bars-toggle]");
     if (btn) {
       if (this.reduced) { btn.hidden = true; return; }
       var label = btn.querySelector("span") || btn;
@@ -202,11 +221,12 @@
   RuledBars.prototype.play = function () { this.paused = false; this.last = 0; this._kick(); };
   RuledBars.prototype.set = function (opts) { for (var k in opts) this.o[k] = opts[k]; this.screenKey = ""; this._frame(performance.now(), true); };
   RuledBars.prototype.destroy = function () {
-    cancelAnimationFrame(this.raf); this._ro.disconnect();
+    cancelAnimationFrame(this.raf); this._ro.disconnect(); if (this._io) this._io.disconnect();
     removeEventListener("scroll", this._onScroll); document.removeEventListener("visibilitychange", this._onVis);
     if (this._onMove) removeEventListener("pointermove", this._onMove);
     if (this._onBtn) this.btn.removeEventListener("click", this._onBtn);
-    this.hero.style.transform = ""; this.hero.style.visibility = ""; this.cv.remove(); delete this.field.__ruledBars;
+    if (this.hero) { this.hero.style.transform = ""; this.hero.style.visibility = ""; }
+    this.cv.remove(); delete this.field.__ruledBars;
   };
 
   function init() {

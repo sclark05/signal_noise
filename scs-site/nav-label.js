@@ -5,7 +5,7 @@
  *     <button data-nav-label-toggle aria-expanded="false" aria-controls="nav-panel"><i></i><span>Menu</span></button>
  *     <div data-nav-label-panel id="nav-panel"> … four links … </div>
  *   </nav>
- * Open state: the nav gets .is-open (style the panel's reveal in CSS). Closed panel is inert.
+ * Open state: the nav, the panel and the toggle all get .is-open (style with combo classes). Closed panel is inert.
  * Esc closes and returns focus to the toggle; opening moves focus to the first link; clicking outside closes.
  */
 (function () {
@@ -17,6 +17,8 @@
     function set(open, focusBtn) {
       btn.setAttribute("aria-expanded", String(open));
       nav.classList.toggle("is-open", open);
+      panel.classList.toggle("is-open", open);    // Webflow combo classes can't target a parent's state
+      btn.classList.toggle("is-open", open);
       panel.inert = !open;
       if (label) label.textContent = open ? "Close" : "Menu";
       if (open) { var first = panel.querySelector("a,button"); if (first) first.focus(); }

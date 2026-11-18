@@ -1,8 +1,8 @@
-/*! scs-site/nav-label.js v1.0.0 — Scott Clark Studio label nav menu. No dependencies.
+/*! scs-site/nav-label.js v1.0.1 — Scott Clark Studio label nav menu. No dependencies.
  *
  * Markup (Webflow component nav_label):
  *   <nav data-nav-label aria-label="Primary">
- *     <button data-nav-label-toggle aria-expanded="false" aria-controls="nav-panel"><i></i><span>Menu</span></button>
+ *     <button data-nav-label-toggle aria-expanded="false" aria-controls="nav-panel"><span class="nav-label_toggle-icon"></span><span data-nav-label-text>Menu</span></button>
  *     <div data-nav-label-panel id="nav-panel"> … four links … </div>
  *   </nav>
  * Open state: the nav, the panel and the toggle all get .is-open (style with combo classes). Closed panel is inert.
@@ -13,7 +13,7 @@
   function setup(nav) {
     var btn = nav.querySelector("[data-nav-label-toggle]"), panel = nav.querySelector("[data-nav-label-panel]");
     if (!btn || !panel) return;
-    var label = btn.querySelector("span");
+    var label = btn.querySelector("[data-nav-label-text], .nav-label_toggle-text") || btn.querySelector("span:last-child");
     function set(open, focusBtn) {
       btn.setAttribute("aria-expanded", String(open));
       nav.classList.toggle("is-open", open);

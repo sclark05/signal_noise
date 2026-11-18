@@ -165,6 +165,8 @@
     if (!this.reduced && o.parallax) this.hero.style.transform = "translate3d(0," + (-y * o.parallax).toFixed(1) + "px,0)";
     if (this.shade) this.shade.style.opacity = (Math.min(1, y / vh) * o.shade).toFixed(3);
     var v = y < vh * 1.02; if (v !== this.visible) { this.visible = v; this._kick(); }
+    // fully covered: hide the fixed hero so it can never paint over later content (e.g. the footer)
+    var hide = y > vh * 1.1; if (hide !== this.hidden) { this.hidden = hide; this.hero.style.visibility = hide ? "hidden" : ""; }
   };
 
   RuledBars.prototype._bind = function () {
@@ -204,7 +206,7 @@
     removeEventListener("scroll", this._onScroll); document.removeEventListener("visibilitychange", this._onVis);
     if (this._onMove) removeEventListener("pointermove", this._onMove);
     if (this._onBtn) this.btn.removeEventListener("click", this._onBtn);
-    this.hero.style.transform = ""; this.cv.remove(); delete this.field.__ruledBars;
+    this.hero.style.transform = ""; this.hero.style.visibility = ""; this.cv.remove(); delete this.field.__ruledBars;
   };
 
   function init() {
